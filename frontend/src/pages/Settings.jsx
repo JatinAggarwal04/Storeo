@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { updateBusiness } from '../services/api'
+import { updateBusiness, loadPreferences, savePreferences } from '../services/api'
 import { useLanguage } from '../contexts/LanguageContext'
 
 const TONE_OPTIONS = [
@@ -8,13 +8,14 @@ const TONE_OPTIONS = [
     { value: 'casual', label: 'Casual', emoji: '✌️', desc: 'Relaxed and informal' },
 ]
 
-export default function Settings({ business }) {
+export default function Settings({ business, user }) {
     const { t } = useLanguage()
-    const [form, setForm] = useState({
+    const [prefs, setPrefs] = useState({
+        bot_tone: 'friendly',
+        auto_greet: true,
         greeting_message: '',
-        bot_tone: 'Friendly',
-        business_hours_start: '09:00',
-        business_hours_end: '18:00',
+        business_hours: { open: '09:00', close: '21:00' },
+        feature_requests: [],
     })
     const [loading, setLoading] = useState(false)
     const [saving, setSaving] = useState(false)

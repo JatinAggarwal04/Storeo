@@ -150,3 +150,15 @@ export function testWhatsAppMessage(businessId, message, phone) {
     body: { business_id: businessId, message, phone },
   });
 }
+
+// ============ Preferences ============
+
+export function loadPreferences(userId, businessId) {
+  // reusing getBusiness since it returns the whole object
+  return getBusiness(businessId).then(data => data.business);
+}
+
+export function savePreferences(userId, businessId, prefs) {
+  // reusing updateBusiness
+  return updateBusiness(businessId, prefs);
+}

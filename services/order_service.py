@@ -80,14 +80,12 @@ def get_dashboard_stats(business_id: str) -> dict:
         .execute()
     )
 
-    # Revenue
-    total_revenue = sum(float(o.get("total") or 0) for o in orders)
-
-    # Status breakdown
-    status_counts = {}
-    for o in orders:
-        s = o.get("status", "pending")
-        status_counts[s] = status_counts.get(s, 0) + 1
+    # Daily stats
+    from datetime import datetime
+    today = datetime.utcnow().date()
+    today_orders = [o for o in orders if datetime.fromisoformat(o["created_at"].replace('Z', '+00:00')).date() == today]
+    today_count = len(today_orders)
+    today_revenue = sum(float(o.get("total") or 0) for o in today_orders)
 
     return {
         "total_orders": len(orders),
@@ -96,4 +94,6 @@ def get_dashboard_stats(business_id: str) -> dict:
         "total_products": len(products_result.data or []),
         "total_revenue": total_revenue,
         "order_status_breakdown": status_counts,
+        "today_orders": today_count,
+        "today_revenue": today_revenue,
     }

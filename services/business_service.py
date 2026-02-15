@@ -118,6 +118,11 @@ def save_business(data: dict) -> dict:
         "languages": data.get("languages", ["English"]),
         "whatsapp_configured": False,
         "onboarding_complete": True,
+        "bot_tone": "friendly",
+        "auto_greet": True,
+        "greeting_message": "",
+        "business_hours": {"open": "09:00", "close": "21:00"},
+        "feature_requests": [],
     }
 
     result = sb.table("businesses").insert(business_record).execute()

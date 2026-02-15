@@ -49,16 +49,17 @@ def list_all():
     return jsonify({"businesses": businesses})
 
 
-@business_bp.route("/<business_id>", methods=["GET"])
+@business_bp.route("/<uuid:business_id>", methods=["GET"])
 def get_one(business_id):
     """Get a single business."""
-    business = get_business(business_id)
+    # Convert UUID to str for Supabase
+    business = get_business(str(business_id))
     if business:
         return jsonify({"business": business})
     return jsonify({"error": "Business not found"}), 404
 
 
-@business_bp.route("/<business_id>", methods=["PUT"])
+@business_bp.route("/<uuid:business_id>", methods=["PUT"])
 def update(business_id):
     """Update a business."""
     data = request.get_json()
