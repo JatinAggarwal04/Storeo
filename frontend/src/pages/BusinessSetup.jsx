@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { chatWithAI, createBusiness } from '../services/api'
 import { saveChat, loadActiveChat } from '../lib/supabase'
+import { useLanguage } from '../contexts/LanguageContext'
 
 const INITIAL_MESSAGE = {
     role: 'assistant',
@@ -17,6 +18,8 @@ export default function BusinessSetup({ onBusinessCreated, user }) {
     const [restoredChat, setRestoredChat] = useState(false)
     const messagesEndRef = useRef(null)
     const inputRef = useRef(null)
+    const { t, language, setLanguage, LANGUAGES } = useLanguage()
+    const [whatsappNumber, setWhatsappNumber] = useState('')
 
     // Restore chat on mount
     useEffect(() => {
@@ -74,6 +77,7 @@ export default function BusinessSetup({ onBusinessCreated, user }) {
 
             if (response.complete && response.business_data) {
                 setBusinessData(response.business_data)
+                setWhatsappNumber(response.business_data.whatsapp_number || user?.phone || '')
             }
         } catch (err) {
             const errorMsg = {
@@ -97,7 +101,7 @@ export default function BusinessSetup({ onBusinessCreated, user }) {
         if (!businessData || saving) return
         setSaving(true)
         try {
-            const payload = { ...businessData }
+            const payload = { ...businessData, whatsapp_number: whatsappNumber }
             if (user?.id) payload.user_id = user.id
             const result = await createBusiness(payload)
             if (result.business) {
@@ -144,14 +148,26 @@ export default function BusinessSetup({ onBusinessCreated, user }) {
         <div className="page">
             <div className="page-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div>
-                    <h2>Business Setup</h2>
-                    <p>Chat with our AI to set up your WhatsApp bot</p>
+                    <h2>{t('setupTitle')}</h2>
+                    <p>{t('setupSubtitle')}</p>
                 </div>
-                {(messages.length > 1) && (
-                    <button className="btn btn-ghost btn-sm" onClick={handleReset}>
-                        ↻ Start Over
-                    </button>
-                )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <select
+                        className="input"
+                        style={{ padding: '6px' }}
+                        value={language}
+                        onChange={(e) => setLanguage(e.target.value)}
+                    >
+                        {Object.entries(LANGUAGES).map(([code, lang]) => (
+                            <option key={code} value={code}>{lang.name}</option>
+                        ))}
+                    </select>
+                    {(messages.length > 1) && (
+                        <button className="btn btn-ghost btn-sm" onClick={handleReset}>
+                            ↻ Start Over
+                        </button>
+                    )}
+                </div>
             </div>
 
             <div className="chat-container">
@@ -174,22 +190,35 @@ export default function BusinessSetup({ onBusinessCreated, user }) {
                         <div style={{ alignSelf: 'flex-start', marginTop: '8px' }}>
                             <div className="card" style={{ maxWidth: '400px' }}>
                                 <h4 style={{ marginBottom: '12px', fontSize: 'var(--text-base)', fontWeight: 600 }}>
-                                    📋 Business Profile
+                                    📋 {t('businessName')}
                                 </h4>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginBottom: '16px' }}>
-                                    <div><strong>Name:</strong> {businessData.business_name}</div>
-                                    <div><strong>Type:</strong> {businessData.business_type}</div>
+                                    <div><strong>{t('businessName')}:</strong> {businessData.business_name}</div>
+                                    <div><strong>{t('businessType')}:</strong> {businessData.business_type}</div>
                                     <div><strong>Location:</strong> {businessData.location}</div>
                                     <div><strong>Description:</strong> {businessData.description}</div>
-                                    <div><strong>Languages:</strong> {(businessData.languages || []).join(', ')}</div>
-                                    <div><strong>WhatsApp Business:</strong> {businessData.has_whatsapp_business ? '✅ Yes' : '❌ Not yet'}</div>
+                                    <div><strong>{t('language')}:</strong> {(businessData.languages || []).join(', ')}</div>
+
+                                    <div style={{ marginTop: '12px' }}>
+                                        <label style={{ display: 'block', marginBottom: '4px', fontWeight: 600, fontSize: 'var(--text-xs)' }}>
+                                            {t('whatsappNumber')}
+                                        </label>
+                                        <input
+                                            className="input"
+                                            value={whatsappNumber}
+                                            onChange={(e) => setWhatsappNumber(e.target.value)}
+                                            placeholder="e.g. 919876543210"
+                                            style={{ width: '100%' }}
+                                            autoFocus
+                                        />
+                                    </div>
                                 </div>
                                 <div style={{ display: 'flex', gap: '8px' }}>
                                     <button className="btn btn-primary" onClick={handleSaveBusiness} disabled={saving}>
                                         {saving ? (
                                             <><span className="spinner" style={{ width: 16, height: 16 }}></span> Saving...</>
                                         ) : (
-                                            '✅ Save & Create Bot'
+                                            '✅ ' + t('submit')
                                         )}
                                     </button>
                                 </div>

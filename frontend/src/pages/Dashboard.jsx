@@ -195,40 +195,26 @@ export default function Dashboard({ business }) {
                     )}
                 </div>
 
-                {/* WhatsApp Setup Guide */}
+                {/* WhatsApp Status Card */}
                 <div className="card">
                     <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, marginBottom: '16px' }}>
-                        📱 WhatsApp Setup
+                        📱 WhatsApp Activation
                     </h3>
-                    <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                            <span style={{ background: 'var(--accent-soft)', color: 'var(--accent)', width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, flexShrink: 0 }}>1</span>
-                            <div>
-                                <strong>Create a Twilio account</strong> at{' '}
-                                <span style={{ color: 'var(--accent)' }}>twilio.com</span>
-                            </div>
-                        </div>
-                        <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                            <span style={{ background: 'var(--accent-soft)', color: 'var(--accent)', width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, flexShrink: 0 }}>2</span>
-                            <div>
-                                <strong>Enable WhatsApp Sandbox</strong> in Twilio Console → Messaging → WhatsApp
-                            </div>
-                        </div>
-                        <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                            <span style={{ background: 'var(--accent-soft)', color: 'var(--accent)', width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, flexShrink: 0 }}>3</span>
-                            <div>
-                                <strong>Set webhook URL</strong> to your server:
-                                <code style={{ display: 'block', marginTop: '4px', padding: '6px 10px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius-sm)', fontSize: 'var(--text-xs)', wordBreak: 'break-all' }}>
-                                    https://your-domain.com/api/whatsapp/webhook
-                                </code>
-                            </div>
-                        </div>
-                        <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                            <span style={{ background: 'var(--accent-soft)', color: 'var(--accent)', width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, flexShrink: 0 }}>4</span>
-                            <div>
-                                <strong>Add credentials</strong> to <code style={{ padding: '2px 6px', background: 'var(--bg-elevated)', borderRadius: '4px', fontSize: 'var(--text-xs)' }}>.env</code> — Account SID, Auth Token, WhatsApp Number
-                            </div>
-                        </div>
+                    <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+                        <p style={{ marginBottom: '12px' }}>
+                            Your bot is currently <strong>{botStatus?.active ? 'Active ✅' : 'Pending Activation ⏳'}</strong>.
+                        </p>
+                        {!botStatus?.active && (
+                            <p>
+                                We are setting up your WhatsApp Business account. This usually takes 24-48 hours.
+                                We will notify you on <strong>{business.phone_number || business.whatsapp_number}</strong> once it's ready.
+                            </p>
+                        )}
+                        {botStatus?.active && (
+                            <p>
+                                Your bot is live! Share your number <strong>{botStatus?.whatsapp_number}</strong> with customers to start taking orders.
+                            </p>
+                        )}
                     </div>
                 </div>
             </div>
