@@ -1,4 +1,5 @@
-run = "python main.py"
+# Run the build script for frontend and then start the python server
+run = "npm install --prefix frontend && npm run build --prefix frontend && python main.py"
 modules = ["python-3.10", "nodejs-18"]
 
 [nix]
@@ -7,11 +8,7 @@ channel = "stable-24_05"
 [unit]
 language = "python3"
 
-# If you want to run frontend dev server as well, 
-# you might want to use a shell or a startup script.
-# For example:
-# run = "bash start.sh"
-#
-# start.sh:
-# npm run dev --prefix frontend &
-# python main.py
+# Note: The above run command ensures that:
+# 1. Frontend dependencies are installed
+# 2. Frontend is built (creating dist folder)
+# 3. Python backend starts and serves the built frontend

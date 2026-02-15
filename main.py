@@ -12,7 +12,8 @@ from routes.orders import orders_bp
 
 
 def create_app():
-    app = Flask(__name__)
+    # Serve static files from the React app build directory
+    app = Flask(__name__, static_folder="frontend/dist", static_url_path="")
     app.config["SECRET_KEY"] = os.getenv("FLASK_SECRET_KEY", "dev-secret")
 
     CORS(app, resources={r"/api/*": {"origins": "*"}})
@@ -23,9 +24,12 @@ def create_app():
     app.register_blueprint(whatsapp_bp, url_prefix="/api/whatsapp")
     app.register_blueprint(orders_bp, url_prefix="/api/orders")
 
-    @app.route("/")
-    def health():
-        return {"status": "ok", "service": "Stoereo API"}
+    @app.route("/", defaults={"path": ""})
+    @app.route("/<path:path>")
+    def serve(path):
+        if path != "" and os.path.exists(app.static_folder + "/" + path):
+            return app.send_static_file(path)
+        return app.send_static_file("index.html")
 
     return app
 
