@@ -1,61 +1,63 @@
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-
-const NAV_ITEMS = [
-    {
-        path: '/',
-        label: 'Business Setup',
-        icon: (
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M13.5 2.5L17.5 6.5L8.5 15.5L3 17L4.5 11.5L13.5 2.5Z" />
-                <path d="M11.5 4.5L15.5 8.5" />
-            </svg>
-        ),
-    },
-    {
-        path: '/inventory',
-        label: 'Inventory',
-        icon: (
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M2.5 5L10 1.5L17.5 5L10 8.5L2.5 5Z" />
-                <path d="M2.5 5V14L10 17.5" />
-                <path d="M17.5 5V14L10 17.5" />
-                <path d="M10 8.5V17.5" />
-            </svg>
-        ),
-    },
-    {
-        path: '/dashboard',
-        label: 'Dashboard',
-        icon: (
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="2" y="10" width="4" height="8" rx="1" />
-                <rect x="8" y="6" width="4" height="12" rx="1" />
-                <rect x="14" y="2" width="4" height="16" rx="1" />
-            </svg>
-        ),
-    },
-    {
-        path: '/settings',
-        label: 'Settings',
-        icon: (
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="10" cy="10" r="3" />
-                <path d="M10 1.5V4" />
-                <path d="M10 16V18.5" />
-                <path d="M3.99 3.99L5.76 5.76" />
-                <path d="M14.24 14.24L16.01 16.01" />
-                <path d="M1.5 10H4" />
-                <path d="M16 10H18.5" />
-                <path d="M3.99 16.01L5.76 14.24" />
-                <path d="M14.24 5.76L16.01 3.99" />
-            </svg>
-        ),
-    },
-]
+import { useLanguage } from '../contexts/LanguageContext'
 
 export default function Layout({ children, businesses, activeBusiness, onBusinessChange, user }) {
     const { signOut } = useAuth()
+    const { t } = useLanguage()
+
+    const NAV_ITEMS = [
+        {
+            path: '/',
+            label: t('navBusinessSetup'),
+            icon: (
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M13.5 2.5L17.5 6.5L8.5 15.5L3 17L4.5 11.5L13.5 2.5Z" />
+                    <path d="M11.5 4.5L15.5 8.5" />
+                </svg>
+            ),
+        },
+        {
+            path: '/inventory',
+            label: t('navInventory'),
+            icon: (
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M2.5 5L10 1.5L17.5 5L10 8.5L2.5 5Z" />
+                    <path d="M2.5 5V14L10 17.5" />
+                    <path d="M17.5 5V14L10 17.5" />
+                    <path d="M10 8.5V17.5" />
+                </svg>
+            ),
+        },
+        {
+            path: '/dashboard',
+            label: t('navDashboard'),
+            icon: (
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="10" width="4" height="8" rx="1" />
+                    <rect x="8" y="6" width="4" height="12" rx="1" />
+                    <rect x="14" y="2" width="4" height="16" rx="1" />
+                </svg>
+            ),
+        },
+        {
+            path: '/settings',
+            label: t('navSettings'),
+            icon: (
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="10" cy="10" r="3" />
+                    <path d="M10 1.5V4" />
+                    <path d="M10 16V18.5" />
+                    <path d="M3.99 3.99L5.76 5.76" />
+                    <path d="M14.24 14.24L16.01 16.01" />
+                    <path d="M1.5 10H4" />
+                    <path d="M16 10H18.5" />
+                    <path d="M3.99 16.01L5.76 14.24" />
+                    <path d="M14.24 5.76L16.01 3.99" />
+                </svg>
+            ),
+        },
+    ]
 
     const userInitial = user?.user_metadata?.full_name?.[0] || user?.email?.[0]?.toUpperCase() || '?'
     const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'
@@ -104,7 +106,7 @@ export default function Layout({ children, businesses, activeBusiness, onBusines
 
                 {businesses.length > 0 && (
                     <div className="sidebar-business-section">
-                        <label className="sidebar-section-label">Active Business</label>
+                        <label className="sidebar-section-label">{t('activeBusiness')}</label>
                         <select
                             className="sidebar-business-select"
                             value={activeBusiness?.id || ''}
@@ -123,7 +125,7 @@ export default function Layout({ children, businesses, activeBusiness, onBusines
                         <div className="sidebar-user-name">{userName}</div>
                         <div className="sidebar-user-email">{userEmail}</div>
                     </div>
-                    <button className="sidebar-signout" onClick={signOut} title="Sign out">
+                    <button className="sidebar-signout" onClick={signOut} title={t('navLogout')}>
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M6 14H3.33A1.33 1.33 0 012 12.67V3.33A1.33 1.33 0 013.33 2H6" />
                             <polyline points="10,12 14,8 10,4" />
