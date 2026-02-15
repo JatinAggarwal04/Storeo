@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react'
-import { supabase, signInWithGoogle, signInWithEmail, signUpWithEmail, signOut as logOut } from '../lib/supabase'
+import { supabase, signInWithEmail, signUpWithEmail, signOut as logOut } from '../lib/supabase'
 
 const AuthContext = createContext(null)
 
@@ -42,7 +42,6 @@ export function AuthProvider({ children }) {
         user,
         session,
         loading,
-        signInWithGoogle,
         signInWithEmail,
         signUpWithEmail,
         signOut,

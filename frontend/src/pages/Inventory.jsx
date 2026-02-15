@@ -9,6 +9,7 @@ import {
     deleteProduct,
     uploadImage,
 } from '../services/api'
+import { DEMO_CATEGORIES, DEMO_PRODUCTS } from '../data/demoProducts'
 
 export default function Inventory({ business }) {
     const [categories, setCategories] = useState([])
@@ -21,6 +22,7 @@ export default function Inventory({ business }) {
     const [editingProduct, setEditingProduct] = useState(null)
     const [deleteConfirm, setDeleteConfirm] = useState(null)
     const [deleteCatConfirm, setDeleteCatConfirm] = useState(null)
+    const isDemo = !business
 
     // Product form state
     const [productForm, setProductForm] = useState({
@@ -34,13 +36,23 @@ export default function Inventory({ business }) {
     const fileInputRef = useRef(null)
 
     useEffect(() => {
-        if (business?.id) {
+        if (isDemo) {
+            setCategories(DEMO_CATEGORIES)
+            setProducts(DEMO_PRODUCTS)
+            setLoading(false)
+        } else if (business?.id) {
             fetchCategories()
         }
     }, [business?.id])
 
     useEffect(() => {
-        if (business?.id) {
+        if (isDemo) {
+            if (selectedCategory) {
+                setProducts(DEMO_PRODUCTS.filter(p => p.category_id === selectedCategory))
+            } else {
+                setProducts(DEMO_PRODUCTS)
+            }
+        } else if (business?.id) {
             fetchProducts()
         }
     }, [business?.id, selectedCategory])
@@ -68,7 +80,7 @@ export default function Inventory({ business }) {
 
     const handleAddCategory = async () => {
         const name = newCatName.trim()
-        if (!name) return
+        if (!name || isDemo) return
         try {
             await createCategory(business.id, name)
             setNewCatName('')
@@ -80,6 +92,7 @@ export default function Inventory({ business }) {
     }
 
     const handleDeleteCategory = async (catId) => {
+        if (isDemo) return
         try {
             await deleteCategory(catId)
             if (selectedCategory === catId) setSelectedCategory(null)
@@ -131,6 +144,7 @@ export default function Inventory({ business }) {
     }
 
     const openEditProduct = (product) => {
+        if (isDemo) return
         setEditingProduct(product)
         setProductForm({
             name: product.name,
@@ -142,7 +156,7 @@ export default function Inventory({ business }) {
     }
 
     const handleSaveProduct = async () => {
-        if (!productForm.name.trim()) return
+        if (!productForm.name.trim() || isDemo) return
         setSavingProduct(true)
         try {
             if (editingProduct) {
@@ -178,6 +192,7 @@ export default function Inventory({ business }) {
     }
 
     const handleDeleteProduct = async (productId) => {
+        if (isDemo) return
         try {
             await deleteProduct(productId)
             setDeleteConfirm(null)
@@ -187,51 +202,44 @@ export default function Inventory({ business }) {
         }
     }
 
-    const getCategoryProductCount = (catId) => {
-        // We'd need all products for accurate count, but this works for now
-        return products.filter(p => p.category_id === catId).length
-    }
-
-    // No business selected
-    if (!business) {
-        return (
-            <div className="page">
-                <div className="empty-state">
-                    <div className="empty-icon">🏪</div>
-                    <h3>No Business Selected</h3>
-                    <p>Set up your business first on the Business Setup page, then come back here to add products.</p>
-                </div>
-            </div>
-        )
-    }
-
     return (
         <div className="page">
             <div className="page-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div>
                     <h2>Inventory</h2>
-                    <p>Manage products for {business.name}</p>
+                    <p>{isDemo ? 'Demo products — set up a business to manage your own' : `Manage products for ${business.name}`}</p>
                 </div>
-                <button className="btn btn-primary" onClick={openAddProduct}>
-                    + Add Product
-                </button>
+                {!isDemo && (
+                    <button className="btn btn-primary" onClick={openAddProduct}>
+                        + Add Product
+                    </button>
+                )}
             </div>
+
+            {isDemo && (
+                <div className="demo-banner">
+                    <span className="demo-banner-icon">👀</span>
+                    <span>You're viewing demo products. <strong>Set up a business</strong> to add and manage your own inventory.</span>
+                </div>
+            )}
 
             <div className="inventory-layout">
                 {/* Categories Sidebar */}
                 <div className="inventory-sidebar">
                     <h3>
                         Categories
-                        <button
-                            className="btn btn-ghost btn-sm"
-                            onClick={() => setShowAddCat(!showAddCat)}
-                            style={{ padding: '4px 8px', fontSize: '16px' }}
-                        >
-                            +
-                        </button>
+                        {!isDemo && (
+                            <button
+                                className="btn btn-ghost btn-sm"
+                                onClick={() => setShowAddCat(!showAddCat)}
+                                style={{ padding: '4px 8px', fontSize: '16px' }}
+                            >
+                                +
+                            </button>
+                        )}
                     </h3>
 
-                    {showAddCat && (
+                    {showAddCat && !isDemo && (
                         <div className="add-category-inline" style={{ marginBottom: '12px' }}>
                             <input
                                 className="input"
@@ -253,7 +261,7 @@ export default function Inventory({ business }) {
                             onClick={() => setSelectedCategory(null)}
                         >
                             <span>All Products</span>
-                            <span className="cat-count">{products.length}</span>
+                            <span className="cat-count">{isDemo ? DEMO_PRODUCTS.length : products.length}</span>
                         </div>
                         {categories.map(cat => (
                             <div
@@ -263,23 +271,25 @@ export default function Inventory({ business }) {
                             >
                                 <span>{cat.name}</span>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <button
-                                        className="btn btn-ghost"
-                                        style={{ padding: '2px 4px', fontSize: '10px', color: 'var(--text-muted)' }}
-                                        onClick={(e) => {
-                                            e.stopPropagation()
-                                            setDeleteCatConfirm(cat)
-                                        }}
-                                        title="Delete category"
-                                    >
-                                        ✕
-                                    </button>
+                                    {!isDemo && (
+                                        <button
+                                            className="btn btn-ghost"
+                                            style={{ padding: '2px 4px', fontSize: '10px', color: 'var(--text-muted)' }}
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                setDeleteCatConfirm(cat)
+                                            }}
+                                            title="Delete category"
+                                        >
+                                            ✕
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         ))}
                     </div>
 
-                    {categories.length === 0 && !showAddCat && (
+                    {categories.length === 0 && !showAddCat && !isDemo && (
                         <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
                             No categories yet.<br />Click + to add one.
                         </div>
@@ -321,20 +331,22 @@ export default function Inventory({ business }) {
                                             <span className="product-price">
                                                 {product.price ? `₹${parseFloat(product.price).toLocaleString('en-IN')}` : '—'}
                                             </span>
-                                            <div className="product-actions">
-                                                <button
-                                                    className="btn btn-ghost btn-sm"
-                                                    onClick={() => openEditProduct(product)}
-                                                >
-                                                    ✏️
-                                                </button>
-                                                <button
-                                                    className="btn btn-ghost btn-sm"
-                                                    onClick={() => setDeleteConfirm(product)}
-                                                >
-                                                    🗑️
-                                                </button>
-                                            </div>
+                                            {!isDemo && (
+                                                <div className="product-actions">
+                                                    <button
+                                                        className="btn btn-ghost btn-sm"
+                                                        onClick={() => openEditProduct(product)}
+                                                    >
+                                                        ✏️
+                                                    </button>
+                                                    <button
+                                                        className="btn btn-ghost btn-sm"
+                                                        onClick={() => setDeleteConfirm(product)}
+                                                    >
+                                                        🗑️
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -345,7 +357,7 @@ export default function Inventory({ business }) {
             </div>
 
             {/* Add/Edit Product Modal */}
-            {showProductModal && (
+            {showProductModal && !isDemo && (
                 <div className="modal-overlay" onClick={() => setShowProductModal(false)}>
                     <div className="modal" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
