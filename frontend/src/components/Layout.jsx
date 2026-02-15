@@ -81,10 +81,11 @@ export default function Layout({ children, businesses, activeBusiness, onBusines
                                 </linearGradient>
                             </defs>
                         </svg>
-                        <div>
-                            <h1>BotBuilder</h1>
-                            <span>WhatsApp for Business</span>
+                        <div className="sidebar-header">
+                            <div className="logo-icon">S</div>
+                            <h1>Stoereo</h1>
                         </div>
+                        <span>WhatsApp for Business</span>
                     </div>
                 </div>
 

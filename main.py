@@ -25,7 +25,7 @@ def create_app():
 
     @app.route("/")
     def health():
-        return {"status": "ok", "service": "WhatsApp Bot Builder API"}
+        return {"status": "ok", "service": "Stoereo API"}
 
     return app
 

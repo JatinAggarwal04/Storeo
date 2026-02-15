@@ -10,8 +10,10 @@ import {
     uploadImage,
 } from '../services/api'
 import { DEMO_CATEGORIES, DEMO_PRODUCTS } from '../data/demoProducts'
+import { useLanguage } from '../contexts/LanguageContext'
 
 export default function Inventory({ business }) {
+    const { t } = useLanguage()
     const [categories, setCategories] = useState([])
     const [selectedCategory, setSelectedCategory] = useState(null)
     const [products, setProducts] = useState([])
@@ -206,12 +208,12 @@ export default function Inventory({ business }) {
         <div className="page">
             <div className="page-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div>
-                    <h2>Inventory</h2>
-                    <p>{isDemo ? 'Demo products — set up a business to manage your own' : `Manage products for ${business.name}`}</p>
+                    <h2>{t('navInventory')}</h2>
+                    <p>{isDemo ? t('inventoryDemo') : t('inventorySubtitle') + ` ${business?.name}`}</p>
                 </div>
                 {!isDemo && (
                     <button className="btn btn-primary" onClick={openAddProduct}>
-                        + Add Product
+                        {t('addProduct')}
                     </button>
                 )}
             </div>
@@ -219,7 +221,7 @@ export default function Inventory({ business }) {
             {isDemo && (
                 <div className="demo-banner">
                     <span className="demo-banner-icon">👀</span>
-                    <span>You're viewing demo products. <strong>Set up a business</strong> to add and manage your own inventory.</span>
+                    <span>{t('demoBanner')}</span>
                 </div>
             )}
 
@@ -227,7 +229,7 @@ export default function Inventory({ business }) {
                 {/* Categories Sidebar */}
                 <div className="inventory-sidebar">
                     <h3>
-                        Categories
+                        {t('categories')}
                         {!isDemo && (
                             <button
                                 className="btn btn-ghost btn-sm"
@@ -243,14 +245,14 @@ export default function Inventory({ business }) {
                         <div className="add-category-inline" style={{ marginBottom: '12px' }}>
                             <input
                                 className="input"
-                                placeholder="Category name"
+                                placeholder={t('categoryNamePlaceholder')}
                                 value={newCatName}
                                 onChange={(e) => setNewCatName(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
                                 autoFocus
                             />
                             <button className="btn btn-primary btn-sm" onClick={handleAddCategory}>
-                                Add
+                                {t('add')}
                             </button>
                         </div>
                     )}
@@ -260,7 +262,7 @@ export default function Inventory({ business }) {
                             className={`category-item ${selectedCategory === null ? 'active' : ''}`}
                             onClick={() => setSelectedCategory(null)}
                         >
-                            <span>All Products</span>
+                            <span>{t('allProducts')}</span>
                             <span className="cat-count">{isDemo ? DEMO_PRODUCTS.length : products.length}</span>
                         </div>
                         {categories.map(cat => (
@@ -279,7 +281,7 @@ export default function Inventory({ business }) {
                                                 e.stopPropagation()
                                                 setDeleteCatConfirm(cat)
                                             }}
-                                            title="Delete category"
+                                            title={t('deleteCategory')}
                                         >
                                             ✕
                                         </button>
@@ -291,7 +293,7 @@ export default function Inventory({ business }) {
 
                     {categories.length === 0 && !showAddCat && !isDemo && (
                         <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
-                            No categories yet.<br />Click + to add one.
+                            {t('noCategories')}
                         </div>
                     )}
                 </div>
@@ -301,16 +303,16 @@ export default function Inventory({ business }) {
                     {loading ? (
                         <div className="page-loading">
                             <div className="spinner" style={{ width: 32, height: 32 }}></div>
-                            <span>Loading products...</span>
+                            <span>{t('loadingProducts')}</span>
                         </div>
                     ) : products.length === 0 ? (
                         <div className="empty-state">
                             <div className="empty-icon">📦</div>
-                            <h3>No Products Yet</h3>
+                            <h3>{t('noProducts')}</h3>
                             <p>
                                 {categories.length === 0
-                                    ? 'Create a category first, then add your products.'
-                                    : 'Click "Add Product" to add your first product.'}
+                                    ? t('createCategoryFirst')
+                                    : t('addProductFirst')}
                             </p>
                         </div>
                     ) : (
@@ -326,7 +328,7 @@ export default function Inventory({ business }) {
                                     </div>
                                     <div className="product-card-body">
                                         <h4>{product.name}</h4>
-                                        <p className="product-desc">{product.description || 'No description'}</p>
+                                        <p className="product-desc">{product.description || t('noDescription')}</p>
                                         <div className="product-card-footer">
                                             <span className="product-price">
                                                 {product.price ? `₹${parseFloat(product.price).toLocaleString('en-IN')}` : '—'}
@@ -361,13 +363,13 @@ export default function Inventory({ business }) {
                 <div className="modal-overlay" onClick={() => setShowProductModal(false)}>
                     <div className="modal" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h3>{editingProduct ? 'Edit Product' : 'Add Product'}</h3>
+                            <h3>{editingProduct ? t('editProduct') : t('addProduct')}</h3>
                             <button className="btn btn-ghost btn-icon" onClick={() => setShowProductModal(false)}>✕</button>
                         </div>
                         <div className="modal-body">
                             {/* Image Upload */}
                             <div className="input-group">
-                                <label>Product Images (up to 3)</label>
+                                <label>{t('productImages')}</label>
                                 {productForm.image_urls.length > 0 && (
                                     <div className="image-preview-grid" style={{ marginBottom: '8px' }}>
                                         {productForm.image_urls.map((url, i) => (
@@ -385,12 +387,12 @@ export default function Inventory({ business }) {
                                     >
                                         {uploading ? (
                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                                                <span className="spinner"></span> Uploading...
+                                                <span className="spinner"></span> {t('uploading')}
                                             </div>
                                         ) : (
                                             <>
                                                 <div style={{ fontSize: '1.5rem', marginBottom: '6px' }}>📸</div>
-                                                <div>Click to upload images</div>
+                                                <div>{t('clickToUpload')}</div>
                                                 <div style={{ fontSize: 'var(--text-xs)', marginTop: '4px' }}>{3 - productForm.image_urls.length} remaining</div>
                                             </>
                                         )}
@@ -408,10 +410,10 @@ export default function Inventory({ business }) {
 
                             {/* Name */}
                             <div className="input-group">
-                                <label>Product Name *</label>
+                                <label>{t('productName')} *</label>
                                 <input
                                     className="input"
-                                    placeholder="e.g. Steel Dinner Plate"
+                                    placeholder={t('productNamePlaceholder')}
                                     value={productForm.name}
                                     onChange={(e) => setProductForm(prev => ({ ...prev, name: e.target.value }))}
                                 />
@@ -419,10 +421,10 @@ export default function Inventory({ business }) {
 
                             {/* Description */}
                             <div className="input-group">
-                                <label>Description</label>
+                                <label>{t('productDescription')}</label>
                                 <textarea
                                     className="input"
-                                    placeholder="Describe your product..."
+                                    placeholder={t('productDescPlaceholder')}
                                     value={productForm.description}
                                     onChange={(e) => setProductForm(prev => ({ ...prev, description: e.target.value }))}
                                     rows={3}
@@ -431,7 +433,7 @@ export default function Inventory({ business }) {
 
                             {/* Price */}
                             <div className="input-group">
-                                <label>Price (₹)</label>
+                                <label>{t('productPrice')}</label>
                                 <input
                                     className="input"
                                     type="number"
@@ -445,7 +447,7 @@ export default function Inventory({ business }) {
                             {/* Category (for new products) */}
                             {!editingProduct && (
                                 <div className="input-group">
-                                    <label>Category</label>
+                                    <label>{t('productCategory')}</label>
                                     <select
                                         className="input"
                                         value={selectedCategory || categories[0]?.id || ''}
@@ -462,7 +464,7 @@ export default function Inventory({ business }) {
 
                         <div className="modal-footer">
                             <button className="btn btn-secondary" onClick={() => setShowProductModal(false)}>
-                                Cancel
+                                {t('cancel')}
                             </button>
                             <button
                                 className="btn btn-primary"
@@ -470,9 +472,9 @@ export default function Inventory({ business }) {
                                 disabled={!productForm.name.trim() || savingProduct}
                             >
                                 {savingProduct ? (
-                                    <><span className="spinner" style={{ width: 14, height: 14 }}></span> Saving...</>
+                                    <><span className="spinner" style={{ width: 14, height: 14 }}></span> {t('saving')}</>
                                 ) : (
-                                    editingProduct ? 'Update Product' : 'Add Product'
+                                    editingProduct ? t('updateButton') : t('addButton')
                                 )}
                             </button>
                         </div>
@@ -485,15 +487,15 @@ export default function Inventory({ business }) {
                 <div className="modal-overlay" onClick={() => setDeleteConfirm(null)}>
                     <div className="modal" style={{ maxWidth: '400px' }} onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h3>Delete Product</h3>
+                            <h3>{t('deleteProduct')}</h3>
                             <button className="btn btn-ghost btn-icon" onClick={() => setDeleteConfirm(null)}>✕</button>
                         </div>
                         <div className="modal-body">
                             <div className="confirm-dialog">
-                                <p>Delete "<strong>{deleteConfirm.name}</strong>"? This cannot be undone.</p>
+                                <p>{t('deleteProductConfirm')} "<strong>{deleteConfirm.name}</strong>"?</p>
                                 <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
-                                    <button className="btn btn-secondary" onClick={() => setDeleteConfirm(null)}>Cancel</button>
-                                    <button className="btn btn-danger" onClick={() => handleDeleteProduct(deleteConfirm.id)}>Delete</button>
+                                    <button className="btn btn-secondary" onClick={() => setDeleteConfirm(null)}>{t('cancel')}</button>
+                                    <button className="btn btn-danger" onClick={() => handleDeleteProduct(deleteConfirm.id)}>{t('delete')}</button>
                                 </div>
                             </div>
                         </div>
@@ -506,15 +508,15 @@ export default function Inventory({ business }) {
                 <div className="modal-overlay" onClick={() => setDeleteCatConfirm(null)}>
                     <div className="modal" style={{ maxWidth: '400px' }} onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h3>Delete Category</h3>
+                            <h3>{t('deleteCategory')}</h3>
                             <button className="btn btn-ghost btn-icon" onClick={() => setDeleteCatConfirm(null)}>✕</button>
                         </div>
                         <div className="modal-body">
                             <div className="confirm-dialog">
-                                <p>Delete "<strong>{deleteCatConfirm.name}</strong>" and all its products? This cannot be undone.</p>
+                                <p>{t('deleteCategoryConfirm')} "<strong>{deleteCatConfirm.name}</strong>"?</p>
                                 <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
-                                    <button className="btn btn-secondary" onClick={() => setDeleteCatConfirm(null)}>Cancel</button>
-                                    <button className="btn btn-danger" onClick={() => handleDeleteCategory(deleteCatConfirm.id)}>Delete</button>
+                                    <button className="btn btn-secondary" onClick={() => setDeleteCatConfirm(null)}>{t('cancel')}</button>
+                                    <button className="btn btn-danger" onClick={() => handleDeleteCategory(deleteCatConfirm.id)}>{t('delete')}</button>
                                 </div>
                             </div>
                         </div>

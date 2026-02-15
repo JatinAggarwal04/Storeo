@@ -5,7 +5,7 @@ import { useLanguage } from '../contexts/LanguageContext'
 
 const INITIAL_MESSAGE = {
     role: 'assistant',
-    content: "Hey there! 👋 Welcome to BotBuilder — I'll help you set up a WhatsApp bot for your business in just a few minutes.\n\nTo get started, what kind of business do you run?",
+    content: "Hey there! 👋 Welcome to Stoereo — I'll help you set up a WhatsApp bot for your business in just a few minutes.\n\nTo get started, what kind of business do you run?",
 }
 
 export default function BusinessSetup({ onBusinessCreated, user }) {

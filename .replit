@@ -1,0 +1,17 @@
+run = "python main.py"
+modules = ["python-3.10", "nodejs-18"]
+
+[nix]
+channel = "stable-24_05"
+
+[unit]
+language = "python3"
+
+# If you want to run frontend dev server as well, 
+# you might want to use a shell or a startup script.
+# For example:
+# run = "bash start.sh"
+#
+# start.sh:
+# npm run dev --prefix frontend &
+# python main.py

@@ -44,22 +44,12 @@ export default function Login() {
                 {/* Brand */}
                 <div className="login-brand">
                     <div className="login-logo">
-                        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-                            <rect width="40" height="40" rx="12" fill="url(#logo-grad)" />
-                            <path d="M12 20c0-4.4 3.6-8 8-8s8 3.6 8 8-3.6 8-8 8c-1.5 0-2.9-.4-4.1-1.1L12 28l1.1-3.9C12.4 22.9 12 21.5 12 20z" fill="white" fillOpacity="0.9" />
-                            <circle cx="17" cy="19" r="1.2" fill="url(#logo-grad)" />
-                            <circle cx="20" cy="19" r="1.2" fill="url(#logo-grad)" />
-                            <circle cx="23" cy="19" r="1.2" fill="url(#logo-grad)" />
-                            <defs>
-                                <linearGradient id="logo-grad" x1="0" y1="0" x2="40" y2="40">
-                                    <stop stopColor="#25D366" />
-                                    <stop offset="1" stopColor="#128C7E" />
-                                </linearGradient>
-                            </defs>
-                        </svg>
+                        <div style={{ width: 48, height: 48, background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: 24, boxShadow: '0 4px 12px rgba(37, 211, 102, 0.3)' }}>
+                            S
+                        </div>
                     </div>
-                    <h1>BotBuilder</h1>
-                    <p>WhatsApp bots for Indian businesses</p>
+                    <h1 style={{ marginTop: '16px', marginBottom: '8px' }}>Stoereo</h1>
+                    <p>WhatsApp Business Automation</p>
                 </div>
 
                 {/* Email form */}

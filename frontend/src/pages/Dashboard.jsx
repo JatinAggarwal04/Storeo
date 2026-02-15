@@ -101,194 +101,85 @@ export default function Dashboard({ business }) {
     return (
         <div className="page">
             <div className="page-header">
-                <h2>Dashboard</h2>
-                <p>Overview for {business.name}</p>
-            </div>
-
-            {/* Bot Status */}
-            <div className="bot-status-card">
-                <div className={`bot-status-indicator ${botStatus?.active ? 'active' : 'inactive'}`}>
-                    {botStatus?.active ? '🤖' : '⏸️'}
+                <div>
+                    <h2>{t('dashboardTitle')}</h2>
+                    <p>{t('dashboardSubtitle')} {isDemo ? 'Demo Business' : business?.name}</p>
                 </div>
-                <div className="bot-status-info">
-                    <h3>WhatsApp Bot — {botStatus?.active ? 'Active' : 'Setup Pending'}</h3>
-                    <p>
-                        {botStatus?.whatsapp_configured
-                            ? `Connected: ${botStatus.whatsapp_number}`
-                            : 'Configure your Twilio WhatsApp webhook to activate the bot. See the setup guide below.'}
-                    </p>
-                </div>
-                <div style={{ marginLeft: 'auto' }}>
-                    <button className="btn btn-secondary btn-sm" onClick={fetchAll}>
-                        ↻ Refresh
-                    </button>
+                {/* Status Indicator */}
+                <div className={`status-badge ${botStatus === 'active' ? 'status-active' : 'status-pending'}`}>
+                    <span className="status-dot"></span>
+                    {botStatus === 'active' ? t('botActive') : t('botPending')}
                 </div>
             </div>
 
-            {/* Stats */}
-            <div className="stats-grid">
-                <div className="stat-card">
-                    <div className="stat-icon" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>📦</div>
-                    <div className="stat-value">{stats?.total_orders ?? 0}</div>
-                    <div className="stat-label">Total Orders</div>
-                </div>
-                <div className="stat-card">
-                    <div className="stat-icon" style={{ background: 'var(--sky-soft)', color: 'var(--sky)' }}>👥</div>
-                    <div className="stat-value">{stats?.total_customers ?? 0}</div>
-                    <div className="stat-label">Customers</div>
-                </div>
-                <div className="stat-card">
-                    <div className="stat-icon" style={{ background: 'var(--purple-soft)', color: 'var(--purple)' }}>💬</div>
-                    <div className="stat-value">{stats?.total_conversations ?? 0}</div>
-                    <div className="stat-label">Conversations</div>
-                </div>
-                <div className="stat-card">
-                    <div className="stat-icon" style={{ background: 'var(--amber-soft)', color: 'var(--amber)' }}>💰</div>
-                    <div className="stat-value">₹{(stats?.total_revenue ?? 0).toLocaleString('en-IN')}</div>
-                    <div className="stat-label">Revenue</div>
-                </div>
-            </div>
-
-            {/* Two Column: Test Bot + Recent Orders */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '32px' }}>
-                {/* Test Bot Card */}
+            <div className="dashboard-grid">
+                {/* WhatsApp Status Card */}
                 <div className="card">
-                    <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, marginBottom: '16px' }}>
-                        🧪 Test Your Bot
-                    </h3>
-                    <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', marginBottom: '16px' }}>
-                        Send a test message to see how your bot responds. No WhatsApp connection needed.
-                    </p>
-                    <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-                        <input
-                            className="input"
-                            style={{ flex: 1 }}
-                            placeholder="e.g. Do you have steel plates?"
-                            value={testMsg}
-                            onChange={(e) => setTestMsg(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleTestMessage()}
-                        />
-                        <button
-                            className="btn btn-primary"
-                            onClick={handleTestMessage}
-                            disabled={testing || !testMsg.trim()}
-                        >
-                            {testing ? <span className="spinner" style={{ width: 14, height: 14 }}></span> : 'Send'}
-                        </button>
+                    <div className="card-header">
+                        <h3>{t('whatsappActivation')}</h3>
                     </div>
-                    {testReply && (
-                        <div style={{
-                            padding: '14px 16px',
-                            background: 'var(--bg-input)',
-                            borderRadius: 'var(--radius-md)',
-                            border: '1px solid var(--border)',
-                            fontSize: 'var(--text-sm)',
-                            color: 'var(--text-secondary)',
-                            lineHeight: 1.6,
-                            whiteSpace: 'pre-wrap',
-                        }}>
-                            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginBottom: '6px', fontWeight: 600 }}>
-                                🤖 Bot Response:
-                            </div>
-                            {testReply}
+                    <div style={{ color: 'var(--text-secondary)' }}>
+                        <p style={{ marginBottom: '10px' }}>
+                            {botStatus === 'active'
+                                ? t('botLiveMessage')
+                                : <span>
+                                    {t('botSetupMessage')} <strong>{business?.whatsapp_number}</strong>.
+                                </span>
+                            }
+                        </p>
+                    </div>
+                </div>
+
+                {/* Orders Card */}
+                <div className="card">
+                    <div className="card-header">
+                        <h3>{t('recentOrders')}</h3>
+                    </div>
+
+                    {loading ? (
+                        <div className="loading-state">{t('loading')}</div>
+                    ) : orders.length === 0 ? (
+                        <div className="empty-state">
+                            <div className="empty-icon">🛍️</div>
+                            <h4>{t('noOrders')}</h4>
+                            <p>{t('ordersEmptyMsg')}</p>
+                        </div>
+                    ) : (
+                        <div className="table-responsive">
+                            <table className="table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>{t('orderCustomer')}</th>
+                                        <th>{t('orderItems')}</th>
+                                        <th>{t('orderTotal')}</th>
+                                        <th>{t('orderStatus')}</th>
+                                        <th>{t('orderDate')}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {orders.map(order => (
+                                        <tr key={order.id}>
+                                            <td>#{order.id}</td>
+                                            <td>
+                                                <div style={{ fontWeight: 500 }}>{order.customer}</div>
+                                                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{order.phone}</div>
+                                            </td>
+                                            <td>{order.items}</td>
+                                            <td>₹{order.total}</td>
+                                            <td>
+                                                <span className={`badge badge-${order.status.toLowerCase()}`}>
+                                                    {order.status}
+                                                </span>
+                                            </td>
+                                            <td style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{order.date}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
                     )}
                 </div>
-
-                {/* WhatsApp Status Card */}
-                <div className="card">
-                    <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, marginBottom: '16px' }}>
-                        📱 WhatsApp Activation
-                    </h3>
-                    <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
-                        <p style={{ marginBottom: '12px' }}>
-                            Your bot is currently <strong>{botStatus?.active ? 'Active ✅' : 'Pending Activation ⏳'}</strong>.
-                        </p>
-                        {!botStatus?.active && (
-                            <p>
-                                We are setting up your WhatsApp Business account. This usually takes 24-48 hours.
-                                We will notify you on <strong>{business.phone_number || business.whatsapp_number}</strong> once it's ready.
-                            </p>
-                        )}
-                        {botStatus?.active && (
-                            <p>
-                                Your bot is live! Share your number <strong>{botStatus?.whatsapp_number}</strong> with customers to start taking orders.
-                            </p>
-                        )}
-                    </div>
-                </div>
-            </div>
-
-            {/* Orders Table */}
-            <div style={{ marginBottom: '24px' }}>
-                <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, marginBottom: '16px' }}>
-                    Recent Orders
-                </h3>
-
-                {orders.length === 0 ? (
-                    <div className="empty-state" style={{ padding: '40px 24px' }}>
-                        <div className="empty-icon">🛒</div>
-                        <h3>No Orders Yet</h3>
-                        <p>Orders from WhatsApp customers will appear here.</p>
-                    </div>
-                ) : (
-                    <div className="table-wrapper">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Customer</th>
-                                    <th>Phone</th>
-                                    <th>Items</th>
-                                    <th>Total</th>
-                                    <th>Status</th>
-                                    <th>Date</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {orders.map(order => (
-                                    <tr key={order.id}>
-                                        <td style={{ color: 'var(--text-primary)', fontWeight: 500 }}>
-                                            {order.customer_name || '—'}
-                                        </td>
-                                        <td>{order.customer_phone}</td>
-                                        <td>
-                                            {Array.isArray(order.items) ? (
-                                                order.items.map((item, i) => (
-                                                    <div key={i} style={{ fontSize: 'var(--text-xs)' }}>
-                                                        {item.product} × {item.quantity}
-                                                    </div>
-                                                ))
-                                            ) : '—'}
-                                        </td>
-                                        <td style={{ fontWeight: 600, color: 'var(--accent)' }}>
-                                            ₹{parseFloat(order.total || 0).toLocaleString('en-IN')}
-                                        </td>
-                                        <td>
-                                            <select
-                                                className="status-select"
-                                                value={order.status}
-                                                onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                                            >
-                                                <option value="pending">Pending</option>
-                                                <option value="confirmed">Confirmed</option>
-                                                <option value="preparing">Preparing</option>
-                                                <option value="delivered">Delivered</option>
-                                                <option value="cancelled">Cancelled</option>
-                                            </select>
-                                        </td>
-                                        <td style={{ fontSize: 'var(--text-xs)' }}>
-                                            {new Date(order.created_at).toLocaleDateString('en-IN', {
-                                                day: 'numeric',
-                                                month: 'short',
-                                                year: 'numeric',
-                                            })}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
             </div>
         </div>
     )
