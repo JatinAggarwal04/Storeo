@@ -3,7 +3,7 @@
 -- 1. Create the bucket if it doesn't exist
 INSERT INTO storage.buckets (id, name, public) 
 VALUES ('product-images', 'product-images', true) 
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET public = true;
 
 -- 2. Allow authenticated users (like your demo script) to upload images
 CREATE POLICY "Allow authenticated uploads"
