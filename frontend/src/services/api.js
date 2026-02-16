@@ -144,10 +144,10 @@ export function getWhatsAppStatus(businessId) {
   return request(`/whatsapp/status/${businessId}`);
 }
 
-export function testWhatsAppMessage(businessId, message, phone) {
+export function testWhatsAppMessage(businessId, message, phone, language) {
   return request('/whatsapp/test-message', {
     method: 'POST',
-    body: { business_id: businessId, message, phone },
+    body: { business_id: businessId, message, phone, language },
   });
 }
 

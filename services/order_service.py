@@ -86,6 +86,15 @@ def get_dashboard_stats(business_id: str) -> dict:
     today_orders = [o for o in orders if datetime.fromisoformat(o["created_at"].replace('Z', '+00:00')).date() == today]
     today_count = len(today_orders)
     today_revenue = sum(float(o.get("total") or 0) for o in today_orders)
+    
+    # Calculate total revenue
+    total_revenue = sum(float(o.get("total") or 0) for o in orders)
+
+    # Calculate status breakdown
+    status_counts = {}
+    for o in orders:
+        s = o.get("status", "unknown")
+        status_counts[s] = status_counts.get(s, 0) + 1
 
     return {
         "total_orders": len(orders),

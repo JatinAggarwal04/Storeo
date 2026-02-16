@@ -69,7 +69,8 @@ export default function Dashboard({ business }) {
         setTesting(true)
         setTestReply('')
         try {
-            const result = await testWhatsAppMessage(business.id, testMsg)
+            // Pass current UI language to the test bot
+            const result = await testWhatsAppMessage(business.id, testMsg, null, t('languageName') || 'English')
             setTestReply(result.reply)
         } catch (err) {
             setTestReply('Error: Make sure the backend is running and API keys are configured.')
@@ -155,7 +156,9 @@ export default function Dashboard({ business }) {
                     <div style={{ color: 'var(--text-secondary)' }}>
                         <p style={{ marginBottom: '10px' }}>
                             {botStatus === 'active'
-                                ? t('botLiveMessage')
+                                ? <span>
+                                    {t('botLiveMessage')} <strong>{business?.whatsapp_number}</strong>
+                                </span>
                                 : <span>
                                     {t('botSetupMessage')} <strong>{business?.whatsapp_number}</strong>.
                                 </span>
@@ -198,7 +201,11 @@ export default function Dashboard({ business }) {
                                                     <div style={{ fontWeight: 500 }}>{order.customer}</div>
                                                     <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{order.phone}</div>
                                                 </td>
-                                                <td>{order.items}</td>
+                                                <td>
+                                                    {Array.isArray(order.items)
+                                                        ? order.items.map(i => `${i.product} (x${i.quantity})`).join(', ')
+                                                        : 'No items'}
+                                                </td>
                                                 <td>₹{order.total}</td>
                                                 <td>
                                                     <span className={`badge badge-${order.status.toLowerCase()}`}>

@@ -16,6 +16,8 @@ def webhook():
     from_number = request.form.get("From", "")  # e.g. "whatsapp:+919876543210"
     to_number = request.form.get("To", "")
 
+    print(f"DEBUG: Webhook Received. Body='{incoming_msg}', From='{from_number}', To='{to_number}'")
+
     if not incoming_msg or not from_number:
         return jsonify({"error": "Invalid webhook data"}), 400
 
@@ -25,7 +27,7 @@ def webhook():
         return "<Response></Response>", 200
 
     # Process and generate reply
-    reply = process_incoming_message(
+    reply, media_url = process_incoming_message(
         business_id=business["id"],
         customer_phone=from_number,
         message_text=incoming_msg,
@@ -33,7 +35,7 @@ def webhook():
 
     # Send reply via Twilio
     try:
-        send_whatsapp_message(from_number, reply)
+        send_whatsapp_message(from_number, reply, media_url)
     except Exception as e:
         print(f"[Twilio Error] Failed to send message: {e}")
 
@@ -71,9 +73,10 @@ def test_message():
     business_id = data.get("business_id")
     message = data.get("message", "")
     phone = data.get("phone", "whatsapp:+910000000000")
+    language = data.get("language")
 
     if not business_id or not message:
         return jsonify({"error": "business_id and message required"}), 400
 
-    reply = process_incoming_message(business_id, phone, message)
-    return jsonify({"reply": reply})
+    reply, media_url = process_incoming_message(business_id, phone, message, language)
+    return jsonify({"reply": reply, "media_url": media_url})

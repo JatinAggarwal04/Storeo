@@ -13,15 +13,25 @@ def get_twilio_client():
     return TwilioClient(Config.TWILIO_ACCOUNT_SID, Config.TWILIO_AUTH_TOKEN)
 
 
-def send_whatsapp_message(to: str, body: str):
+def send_whatsapp_message(to: str, body: str, media_url: str = None):
     """Send a WhatsApp message via Twilio."""
     client = get_twilio_client()
-    message = client.messages.create(
-        from_=Config.TWILIO_WHATSAPP_NUMBER,
-        body=body,
-        to=to,
-    )
-    return message.sid
+    print(f"DEBUG: Sending message FROM {Config.TWILIO_WHATSAPP_NUMBER} TO {to} (Media: {media_url})")
+    try:
+        msg_args = {
+            "from_": Config.TWILIO_WHATSAPP_NUMBER,
+            "body": body,
+            "to": to,
+        }
+        if media_url:
+            msg_args["media_url"] = [media_url]
+
+        message = client.messages.create(**msg_args)
+        print(f"DEBUG: Message sent. SID: {message.sid}")
+        return message.sid
+    except Exception as e:
+        print(f"ERROR: Failed to send WhatsApp message: {e}")
+        return None
 
 
 def get_or_create_conversation(business_id: str, customer_phone: str) -> dict:
@@ -95,13 +105,18 @@ def build_bot_system_prompt(business: dict, inventory: list, language: str) -> s
             cat = p.get("categories", {}).get("name", "General") if p.get("categories") else "General"
             price_str = f"₹{p['price']}" if p.get("price") else "Price not set"
             stock_str = "In stock" if p.get("in_stock", True) else "Out of stock"
-            items.append(f"- {p['name']} [{cat}] — {price_str} ({stock_str}): {p.get('description', '')}")
+            img_str = p.get("image_urls", [])[0] if p.get("image_urls") else ""
+            items.append(f"- {p['name']} [{cat}] — {price_str} ({stock_str}) [Image: {img_str}]: {p.get('description', '')}")
         inventory_text = "\n".join(items)
     else:
         inventory_text = "No products in inventory yet."
 
     return f"""You are a helpful WhatsApp assistant for "{business['name']}", a {business['type']} located in {business.get('location', 'India')}.
 {business.get('description', '')}
+
+CURRENT CUSTOMER CONTEXT:
+- Phone Number: {business.get('customer_context_phone', 'Unknown')}
+- Language: {language}
 
 {lang_instruction}
 
@@ -131,13 +146,31 @@ RULES:
 - Never make up products that aren't in the inventory
 - For pricing, only quote prices from the inventory
 - If price is not set, say "Please contact the shop for pricing"
+
+PRODUCT DISPLAY FORMAT:
+When showing a product, use this exact structure:
+"Yes! Our *[Product Name]* is a great choice! ✨
+
+*Details:*
+• [Description/Key Features] 
+• *Price:* [Price]
+• *Stock:* Available ✅
+Here's the image: [Link if available]
+
+[Closing sentence about the product's value]
+
+Would you like to order this? If yes, I'll need:
+• How many sets you want
+• Your name
+• Delivery address"
 """
 
 
-def process_incoming_message(business_id: str, customer_phone: str, message_text: str) -> str:
-    """Process an incoming WhatsApp message and return a response."""
-    # 1. Detect language
-    language = detect_language(message_text)
+def process_incoming_message(business_id: str, customer_phone: str, message_text: str, language: str = None) -> tuple:
+    """Process an incoming WhatsApp message and return (reply_text, media_url)."""
+    # 1. Detect language (if not provided)
+    if not language:
+        language = detect_language(message_text)
 
     # 2. Get/create conversation
     convo = get_or_create_conversation(business_id, customer_phone)
@@ -152,6 +185,8 @@ def process_incoming_message(business_id: str, customer_phone: str, message_text
     inventory = search_products(business_id, "")  # Get all products
 
     # 5. Build system prompt
+    # Temporarily attach phone to business dict for the prompt builder
+    business['customer_context_phone'] = customer_phone
     system_prompt = build_bot_system_prompt(business, inventory, language)
 
     # 6. Prepare message history (keep last 20 messages for context)
@@ -182,6 +217,15 @@ def process_incoming_message(business_id: str, customer_phone: str, message_text
 
     # 8. Check if bot wants to create an order
     import re
+    
+    # Check for Image trigger
+    media_url = None
+    img_match = re.search(r'\[IMAGE: (https?://.*?)\]', reply)
+    if img_match:
+        media_url = img_match.group(1)
+        # Remove the tag from the text body
+        reply = reply.replace(img_match.group(0), "").strip()
+
     json_match = re.search(r'```json\s*(\{.*?\})\s*```', reply, re.DOTALL)
     if json_match:
         try:
@@ -209,5 +253,24 @@ def process_incoming_message(business_id: str, customer_phone: str, message_text
     messages.append({"role": "user", "content": message_text})
     messages.append({"role": "assistant", "content": reply})
     update_conversation(convo["id"], messages, language)
+    
+    # 10. Return just text for API, but use Twilio client to send Media if present
+    # (Since this function is called by webhook which might manually send, we should handle it carefully)
+    # The webhook route calls send_whatsapp_message(from_number, reply). 
+    # That route doesn't know about the media_url extracted here.
+    # FIX: We should send the message HERE if it has media, and return empty string or handled signal?
+    # BETTER FIX: Return a dict or tuple, but that breaks existing contract.
+    # QUICK FIX: If media_url is present, send it IMMEDIATELY here using existing client, 
+    # then return reply text (which will be sent again as text? No, that duplicates).
+    
+    # Actually, the caller `routes/whatsapp.py` does: "send_whatsapp_message(from_number, reply)"
+    # If we send it here, we risk double sending.
+    # However, `process_incoming_message` returns `reply`.
+    # Let's send the MEDIA message here if needed.
+    # If media is sent here, we can return the text. 
+    # But wait, Twilio allows Body + Media in one message.
+    # We should update `process_incoming_message` to return (reply, media_url) tuple?
+    # That requires changing `routes/whatsapp.py` too. Let's do that.
 
-    return reply
+    return reply, media_url
+

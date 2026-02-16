@@ -82,7 +82,6 @@ export default function Layout({ children, businesses, activeBusiness, onBusines
                             </defs>
                         </svg>
                         <div className="sidebar-header">
-                            <div className="logo-icon">S</div>
                             <h1>Stoereo</h1>
                         </div>
                         <span>WhatsApp for Business</span>

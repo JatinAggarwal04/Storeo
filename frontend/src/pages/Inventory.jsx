@@ -24,7 +24,8 @@ export default function Inventory({ business }) {
     const [editingProduct, setEditingProduct] = useState(null)
     const [deleteConfirm, setDeleteConfirm] = useState(null)
     const [deleteCatConfirm, setDeleteCatConfirm] = useState(null)
-    const isDemo = !business
+    // Force demo mode for Kanha Kollection as per user request
+    const isDemo = !business || business.name === 'Kanha Kollection' || business.is_demo
 
     // Product form state
     const [productForm, setProductForm] = useState({
@@ -218,12 +219,7 @@ export default function Inventory({ business }) {
                 )}
             </div>
 
-            {isDemo && (
-                <div className="demo-banner">
-                    <span className="demo-banner-icon">👀</span>
-                    <span>{t('demoBanner')}</span>
-                </div>
-            )}
+
 
             <div className="inventory-layout">
                 {/* Categories Sidebar */}
