@@ -151,6 +151,19 @@ export function testWhatsAppMessage(businessId, message, phone, language) {
   });
 }
 
+export function connectWhatsApp(businessId, code) {
+  return request(`/business/${businessId}/connect-whatsapp`, {
+    method: 'POST',
+    body: { code },
+  });
+}
+
+export function launchBot(businessId) {
+  return request(`/business/${businessId}/launch`, {
+    method: 'POST',
+  });
+}
+
 // ============ Preferences ============
 
 export function loadPreferences(userId, businessId) {

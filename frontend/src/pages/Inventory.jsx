@@ -9,7 +9,6 @@ import {
     deleteProduct,
     uploadImage,
 } from '../services/api'
-import { DEMO_CATEGORIES, DEMO_PRODUCTS } from '../data/demoProducts'
 import { useLanguage } from '../contexts/LanguageContext'
 
 export default function Inventory({ business }) {
@@ -24,14 +23,14 @@ export default function Inventory({ business }) {
     const [editingProduct, setEditingProduct] = useState(null)
     const [deleteConfirm, setDeleteConfirm] = useState(null)
     const [deleteCatConfirm, setDeleteCatConfirm] = useState(null)
-    // Force demo mode for Kanha Kollection as per user request
-    const isDemo = !business || business.name === 'Kanha Kollection' || business.is_demo
+    const isDemo = false
 
     // Product form state
     const [productForm, setProductForm] = useState({
         name: '',
         description: '',
         price: '',
+        stock_quantity: '',
         image_urls: [],
     })
     const [uploading, setUploading] = useState(false)
@@ -39,23 +38,13 @@ export default function Inventory({ business }) {
     const fileInputRef = useRef(null)
 
     useEffect(() => {
-        if (isDemo) {
-            setCategories(DEMO_CATEGORIES)
-            setProducts(DEMO_PRODUCTS)
-            setLoading(false)
-        } else if (business?.id) {
+        if (business?.id) {
             fetchCategories()
         }
     }, [business?.id])
 
     useEffect(() => {
-        if (isDemo) {
-            if (selectedCategory) {
-                setProducts(DEMO_PRODUCTS.filter(p => p.category_id === selectedCategory))
-            } else {
-                setProducts(DEMO_PRODUCTS)
-            }
-        } else if (business?.id) {
+        if (business?.id) {
             fetchProducts()
         }
     }, [business?.id, selectedCategory])
@@ -142,7 +131,7 @@ export default function Inventory({ business }) {
 
     const openAddProduct = () => {
         setEditingProduct(null)
-        setProductForm({ name: '', description: '', price: '', image_urls: [] })
+        setProductForm({ name: '', description: '', price: '', stock_quantity: '', image_urls: [] })
         setShowProductModal(true)
     }
 
@@ -153,6 +142,7 @@ export default function Inventory({ business }) {
             name: product.name,
             description: product.description || '',
             price: product.price || '',
+            stock_quantity: product.stock_quantity ?? '',
             image_urls: product.image_urls || [],
         })
         setShowProductModal(true)
@@ -162,11 +152,13 @@ export default function Inventory({ business }) {
         if (!productForm.name.trim() || isDemo) return
         setSavingProduct(true)
         try {
+            const stockQty = productForm.stock_quantity !== '' ? parseInt(productForm.stock_quantity, 10) : 0
             if (editingProduct) {
                 await updateProduct(editingProduct.id, {
                     name: productForm.name,
                     description: productForm.description,
                     price: productForm.price ? parseFloat(productForm.price) : null,
+                    stock_quantity: stockQty,
                     image_urls: productForm.image_urls,
                 })
             } else {
@@ -182,6 +174,7 @@ export default function Inventory({ business }) {
                     name: productForm.name,
                     description: productForm.description,
                     price: productForm.price ? parseFloat(productForm.price) : null,
+                    stock_quantity: stockQty,
                     image_urls: productForm.image_urls,
                 })
             }
@@ -259,7 +252,7 @@ export default function Inventory({ business }) {
                             onClick={() => setSelectedCategory(null)}
                         >
                             <span>{t('allProducts')}</span>
-                            <span className="cat-count">{isDemo ? DEMO_PRODUCTS.length : products.length}</span>
+                            <span className="cat-count">{products.length}</span>
                         </div>
                         {categories.map(cat => (
                             <div
@@ -328,6 +321,11 @@ export default function Inventory({ business }) {
                                         <div className="product-card-footer">
                                             <span className="product-price">
                                                 {product.price ? `₹${parseFloat(product.price).toLocaleString('en-IN')}` : '—'}
+                                                {product.stock_quantity > 0 && (
+                                                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginLeft: '6px' }}>
+                                                        qty: {product.stock_quantity}
+                                                    </span>
+                                                )}
                                             </span>
                                             {!isDemo && (
                                                 <div className="product-actions">
@@ -437,6 +435,19 @@ export default function Inventory({ business }) {
                                     placeholder="e.g. 250"
                                     value={productForm.price}
                                     onChange={(e) => setProductForm(prev => ({ ...prev, price: e.target.value }))}
+                                />
+                            </div>
+
+                            {/* Stock Quantity */}
+                            <div className="input-group">
+                                <label>Stock Quantity</label>
+                                <input
+                                    className="input"
+                                    type="number"
+                                    min="0"
+                                    placeholder="e.g. 50"
+                                    value={productForm.stock_quantity}
+                                    onChange={(e) => setProductForm(prev => ({ ...prev, stock_quantity: e.target.value }))}
                                 />
                             </div>
 

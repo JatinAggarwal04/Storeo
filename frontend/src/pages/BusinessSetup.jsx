@@ -3,6 +3,8 @@ import { chatWithAI, createBusiness } from '../services/api'
 import { saveChat, loadActiveChat } from '../lib/supabase'
 import { useLanguage } from '../contexts/LanguageContext'
 
+const META_APP_ID = import.meta.env.VITE_META_APP_ID
+
 const INITIAL_MESSAGE = {
     role: 'assistant',
     content: "Hey there! 👋 Welcome to Stoereo — I'll help you set up a WhatsApp bot for your business in just a few minutes.\n\nTo get started, what kind of business do you run?",
@@ -19,7 +21,8 @@ export default function BusinessSetup({ onBusinessCreated, user }) {
     const messagesEndRef = useRef(null)
     const inputRef = useRef(null)
     const { t, language, setLanguage, LANGUAGES } = useLanguage()
-    const [whatsappNumber, setWhatsappNumber] = useState('')
+    const [savedBusinessId, setSavedBusinessId] = useState(null)
+    const [whatsappConnected, setWhatsappConnected] = useState(false)
 
     // Restore chat on mount
     useEffect(() => {
@@ -101,17 +104,17 @@ export default function BusinessSetup({ onBusinessCreated, user }) {
         if (!businessData || saving) return
         setSaving(true)
         try {
-            const payload = { ...businessData, whatsapp_number: whatsappNumber }
+            const payload = { ...businessData }
             if (user?.id) payload.user_id = user.id
             const result = await createBusiness(payload)
             if (result.business) {
-                setSetupComplete(true)
+                setSavedBusinessId(result.business.id)
                 onBusinessCreated(result.business)
                 const doneMessages = [
                     ...messages,
                     {
                         role: 'assistant',
-                        content: `🎉 Your business "${result.business.name}" has been set up! Head over to **Inventory** to add your products, and then check your **Dashboard** to see your bot in action.`,
+                        content: `🎉 Your business "${result.business.name}" has been saved! Now connect your WhatsApp Business number to continue.`,
                     },
                 ]
                 setMessages(doneMessages)
@@ -130,10 +133,32 @@ export default function BusinessSetup({ onBusinessCreated, user }) {
         }
     }
 
+    const handleConnectWhatsApp = () => {
+        if (!savedBusinessId || !META_APP_ID) return
+        const redirectUri = encodeURIComponent(`${window.location.origin}/whatsapp-callback`)
+        const state = encodeURIComponent(savedBusinessId)
+        const url = `https://www.facebook.com/dialog/oauth?client_id=${META_APP_ID}&redirect_uri=${redirectUri}&state=${state}&scope=whatsapp_business_management,whatsapp_business_messaging&response_type=code&display=popup`
+        const popup = window.open(url, 'meta-whatsapp-signup', 'width=700,height=600,scrollbars=yes')
+
+        // Listen for postMessage from the callback page
+        const onMessage = (event) => {
+            if (event.origin !== window.location.origin) return
+            if (event.data?.type === 'WHATSAPP_CONNECTED') {
+                setWhatsappConnected(true)
+                setSetupComplete(true)
+                window.removeEventListener('message', onMessage)
+                if (popup && !popup.closed) popup.close()
+            }
+        }
+        window.addEventListener('message', onMessage)
+    }
+
     const handleReset = () => {
         setMessages([INITIAL_MESSAGE])
         setBusinessData(null)
         setSetupComplete(false)
+        setSavedBusinessId(null)
+        setWhatsappConnected(false)
         setInput('')
         persistChat([INITIAL_MESSAGE])
     }
@@ -186,11 +211,11 @@ export default function BusinessSetup({ onBusinessCreated, user }) {
                         </div>
                     )}
 
-                    {businessData && !setupComplete && (
+                    {businessData && !savedBusinessId && (
                         <div style={{ alignSelf: 'flex-start', marginTop: '8px' }}>
                             <div className="card" style={{ maxWidth: '400px' }}>
                                 <h4 style={{ marginBottom: '12px', fontSize: 'var(--text-base)', fontWeight: 600 }}>
-                                    📋 {t('businessName')}
+                                    📋 Business Summary
                                 </h4>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginBottom: '16px' }}>
                                     <div><strong>{t('businessName')}:</strong> {businessData.business_name}</div>
@@ -198,30 +223,38 @@ export default function BusinessSetup({ onBusinessCreated, user }) {
                                     <div><strong>Location:</strong> {businessData.location}</div>
                                     <div><strong>Description:</strong> {businessData.description}</div>
                                     <div><strong>{t('language')}:</strong> {(businessData.languages || []).join(', ')}</div>
-
-                                    <div style={{ marginTop: '12px' }}>
-                                        <label style={{ display: 'block', marginBottom: '4px', fontWeight: 600, fontSize: 'var(--text-xs)' }}>
-                                            {t('whatsappNumber')}
-                                        </label>
-                                        <input
-                                            className="input"
-                                            value={whatsappNumber}
-                                            onChange={(e) => setWhatsappNumber(e.target.value)}
-                                            placeholder="e.g. 919876543210"
-                                            style={{ width: '100%' }}
-                                            autoFocus
-                                        />
-                                    </div>
                                 </div>
                                 <div style={{ display: 'flex', gap: '8px' }}>
                                     <button className="btn btn-primary" onClick={handleSaveBusiness} disabled={saving}>
                                         {saving ? (
                                             <><span className="spinner" style={{ width: 16, height: 16 }}></span> Saving...</>
                                         ) : (
-                                            '✅ ' + t('submit')
+                                            '✅ Save Business'
                                         )}
                                     </button>
                                 </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {savedBusinessId && !whatsappConnected && (
+                        <div style={{ alignSelf: 'flex-start', marginTop: '8px' }}>
+                            <div className="card" style={{ maxWidth: '400px' }}>
+                                <h4 style={{ marginBottom: '8px', fontSize: 'var(--text-base)', fontWeight: 600 }}>
+                                    📱 Connect WhatsApp Business
+                                </h4>
+                                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+                                    Click below to connect your WhatsApp Business number via Meta. This opens a secure Meta login popup.
+                                </p>
+                                {META_APP_ID ? (
+                                    <button className="btn btn-primary" onClick={handleConnectWhatsApp}>
+                                        Connect WhatsApp Business →
+                                    </button>
+                                ) : (
+                                    <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
+                                        ⚠️ Set <code>VITE_META_APP_ID</code> in your <code>.env</code> to enable WhatsApp connection.
+                                    </p>
+                                )}
                             </div>
                         </div>
                     )}
@@ -234,14 +267,14 @@ export default function BusinessSetup({ onBusinessCreated, user }) {
                                 borderColor: 'var(--border-accent)',
                             }}>
                                 <div style={{ fontSize: '2rem', marginBottom: '12px' }}>🎉</div>
-                                <h4 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, marginBottom: '8px' }}>You're all set!</h4>
+                                <h4 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, marginBottom: '8px' }}>WhatsApp Connected!</h4>
                                 <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginBottom: '16px' }}>
-                                    Your business profile is saved. Next steps:
+                                    Your business is set up and WhatsApp is connected. Here's what to do next:
                                 </p>
                                 <ol style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                    <li>Go to <strong>Inventory</strong> and add your products</li>
-                                    <li>Check the <strong>Dashboard</strong> for your bot status</li>
-                                    <li>Share your WhatsApp number with customers!</li>
+                                    <li>Go to <strong>Inventory</strong> and add your products with prices</li>
+                                    <li>Come back to <strong>Dashboard</strong> and click <strong>Launch Bot</strong></li>
+                                    <li>Share your WhatsApp number — your AI bot is live!</li>
                                 </ol>
                             </div>
                         </div>

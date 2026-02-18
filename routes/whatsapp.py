@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+from config import Config
 from services.whatsapp_service import (
     process_incoming_message,
     get_business_for_whatsapp,
@@ -8,45 +9,71 @@ from services.whatsapp_service import (
 whatsapp_bp = Blueprint("whatsapp", __name__)
 
 
-@whatsapp_bp.route("/webhook", methods=["POST"])
-def webhook():
-    """Handle incoming WhatsApp messages from Twilio."""
-    # Twilio sends form data
-    incoming_msg = request.form.get("Body", "").strip()
-    from_number = request.form.get("From", "")  # e.g. "whatsapp:+919876543210"
-    to_number = request.form.get("To", "")
-
-    print(f"DEBUG: Webhook Received. Body='{incoming_msg}', From='{from_number}', To='{to_number}'")
-
-    if not incoming_msg or not from_number:
-        return jsonify({"error": "Invalid webhook data"}), 400
-
-    # Find the business this message is for
-    business = get_business_for_whatsapp(to_number)
-    if not business:
-        return "<Response></Response>", 200
-
-    # Process and generate reply
-    reply, media_url = process_incoming_message(
-        business_id=business["id"],
-        customer_phone=from_number,
-        message_text=incoming_msg,
-    )
-
-    # Send reply via Twilio
-    try:
-        send_whatsapp_message(from_number, reply, media_url)
-    except Exception as e:
-        print(f"[Twilio Error] Failed to send message: {e}")
-
-    # Return empty TwiML (we send reply manually via API)
-    return "<Response></Response>", 200
-
-
 @whatsapp_bp.route("/webhook", methods=["GET"])
 def verify():
-    """Webhook verification endpoint."""
-    return "WhatsApp webhook is active", 200
+    """Meta webhook verification (hub.challenge handshake)."""
+    mode = request.args.get("hub.mode")
+    token = request.args.get("hub.verify_token")
+    challenge = request.args.get("hub.challenge")
+
+    if mode == "subscribe" and token == Config.META_WEBHOOK_VERIFY_TOKEN:
+        return challenge, 200
+    return "Forbidden", 403
+
+
+@whatsapp_bp.route("/webhook", methods=["POST"])
+def webhook():
+    """Handle incoming WhatsApp messages from Meta Cloud API."""
+    data = request.get_json(silent=True)
+
+    if not data or data.get("object") != "whatsapp_business_account":
+        return jsonify({"status": "ok"}), 200
+
+    for entry in data.get("entry", []):
+        for change in entry.get("changes", []):
+            value = change.get("value", {})
+
+            # Skip status updates (delivery receipts etc.)
+            if value.get("statuses"):
+                continue
+
+            phone_number_id = value.get("metadata", {}).get("phone_number_id", "")
+
+            for message in value.get("messages", []):
+                msg_type = message.get("type")
+
+                # Only handle text messages
+                if msg_type != "text":
+                    continue
+
+                from_number = message.get("from", "")
+                message_text = message.get("text", {}).get("body", "").strip()
+
+                if not message_text or not from_number:
+                    continue
+
+                business = get_business_for_whatsapp(phone_number_id)
+                if not business:
+                    print(f"[Webhook] No business found for phone_number_id: {phone_number_id}")
+                    continue
+
+                reply, _ = process_incoming_message(
+                    business_id=business["id"],
+                    customer_phone=from_number,
+                    message_text=message_text,
+                )
+
+                try:
+                    send_whatsapp_message(
+                        to=from_number,
+                        body=reply,
+                        phone_number_id=phone_number_id,
+                        access_token=business.get("meta_access_token", ""),
+                    )
+                except Exception as e:
+                    print(f"[Meta API Error] Failed to send message: {e}")
+
+    return jsonify({"status": "ok"}), 200
 
 
 @whatsapp_bp.route("/status/<business_id>", methods=["GET"])
@@ -59,20 +86,21 @@ def status(business_id):
         return jsonify({"error": "Business not found"}), 404
 
     return jsonify({
-        "active": business.get("onboarding_complete", False),
+        "active": business.get("bot_active", False),
         "whatsapp_configured": business.get("whatsapp_configured", False),
         "whatsapp_number": business.get("whatsapp_number", ""),
+        "phone_number_id": business.get("whatsapp_phone_number_id", ""),
         "business_name": business.get("name", ""),
     })
 
 
 @whatsapp_bp.route("/test-message", methods=["POST"])
 def test_message():
-    """Test endpoint — simulate a WhatsApp message without Twilio."""
+    """Test endpoint — simulate a WhatsApp message without a real webhook."""
     data = request.get_json()
     business_id = data.get("business_id")
     message = data.get("message", "")
-    phone = data.get("phone", "whatsapp:+910000000000")
+    phone = data.get("phone", "+910000000000")
     language = data.get("language")
 
     if not business_id or not message:

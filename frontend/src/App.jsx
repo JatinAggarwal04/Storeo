@@ -7,6 +7,7 @@ import BusinessSetup from './pages/BusinessSetup'
 import Inventory from './pages/Inventory'
 import Dashboard from './pages/Dashboard'
 import Settings from './pages/Settings'
+import WhatsAppCallback from './pages/WhatsAppCallback'
 import { listBusinesses } from './services/api'
 
 function AppRoutes() {
@@ -57,6 +58,11 @@ function AppRoutes() {
         </div>
       </div>
     )
+  }
+
+  // Allow the Meta OAuth callback through without auth
+  if (window.location.pathname === '/whatsapp-callback') {
+    return <WhatsAppCallback />
   }
 
   if (!user) {

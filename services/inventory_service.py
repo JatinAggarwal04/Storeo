@@ -44,6 +44,7 @@ def create_product(data: dict) -> dict:
         "price": data.get("price"),
         "image_urls": data.get("image_urls", []),
         "in_stock": data.get("in_stock", True),
+        "stock_quantity": data.get("stock_quantity", 0),
     }
     result = sb.table("products").insert(product).execute()
     return result.data[0] if result.data else None
@@ -70,7 +71,7 @@ def update_product(product_id: str, data: dict) -> dict:
     """Update a product."""
     sb = get_supabase()
     update_data = {}
-    for key in ["name", "description", "price", "image_urls", "in_stock", "category_id"]:
+    for key in ["name", "description", "price", "image_urls", "in_stock", "stock_quantity", "category_id"]:
         if key in data:
             update_data[key] = data[key]
     result = sb.table("products").update(update_data).eq("id", product_id).execute()

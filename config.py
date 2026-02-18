@@ -13,10 +13,10 @@ class Config:
     SUPABASE_URL = os.getenv("SUPABASE_URL", "")
     SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
 
-    # Anthropic
-    ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+    # Google Gemini
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
-    # Twilio
-    TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "")
-    TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "")
-    TWILIO_WHATSAPP_NUMBER = os.getenv("TWILIO_WHATSAPP_NUMBER", "")
+    # Meta WhatsApp Cloud API
+    META_APP_ID = os.getenv("META_APP_ID", "")
+    META_APP_SECRET = os.getenv("META_APP_SECRET", "")
+    META_WEBHOOK_VERIFY_TOKEN = os.getenv("META_WEBHOOK_VERIFY_TOKEN", "")

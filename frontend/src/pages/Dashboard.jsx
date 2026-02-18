@@ -6,6 +6,7 @@ import {
     updateOrderStatus,
     getWhatsAppStatus,
     testWhatsAppMessage,
+    launchBot,
 } from '../services/api'
 
 const STATUS_BADGES = {
@@ -26,6 +27,8 @@ export default function Dashboard({ business }) {
     const [testMsg, setTestMsg] = useState('')
     const [testReply, setTestReply] = useState('')
     const [testing, setTesting] = useState(false)
+    const [launching, setLaunching] = useState(false)
+    const [launchError, setLaunchError] = useState('')
 
     useEffect(() => {
         if (business?.id) {
@@ -61,6 +64,20 @@ export default function Dashboard({ business }) {
             )
         } catch (err) {
             console.error('Failed to update status:', err)
+        }
+    }
+
+    const handleLaunchBot = async () => {
+        if (launching || !business?.id) return
+        setLaunching(true)
+        setLaunchError('')
+        try {
+            await launchBot(business.id)
+            await fetchAll()
+        } catch (err) {
+            setLaunchError(err.message || 'Launch failed. Make sure your catalog has products.')
+        } finally {
+            setLaunching(false)
         }
     }
 
@@ -110,9 +127,9 @@ export default function Dashboard({ business }) {
                     <p>{t('dashboardSubtitle')} {isDemo ? 'Demo Business' : business?.name}</p>
                 </div>
                 {/* Status Indicator */}
-                <div className={`status-badge ${botStatus === 'active' ? 'status-active' : 'status-pending'}`}>
+                <div className={`status-badge ${botStatus?.active ? 'status-active' : 'status-pending'}`}>
                     <span className="status-dot"></span>
-                    {botStatus === 'active' ? t('botActive') : t('botPending')}
+                    {botStatus?.active ? t('botActive') : t('botPending')}
                 </div>
             </div>
 
@@ -155,15 +172,31 @@ export default function Dashboard({ business }) {
                     </div>
                     <div style={{ color: 'var(--text-secondary)' }}>
                         <p style={{ marginBottom: '10px' }}>
-                            {botStatus === 'active'
-                                ? <span>
-                                    {t('botLiveMessage')} <strong>{business?.whatsapp_number}</strong>
-                                </span>
-                                : <span>
-                                    {t('botSetupMessage')} <strong>{business?.whatsapp_number}</strong>.
-                                </span>
+                            {botStatus?.active
+                                ? <span>{t('botLiveMessage')} <strong>{business?.whatsapp_number || botStatus?.phone_number_id}</strong></span>
+                                : botStatus?.whatsapp_configured
+                                    ? <span>WhatsApp connected! Click <strong>Launch Bot</strong> to go live.</span>
+                                    : <span>Connect your WhatsApp Business number from the Business Setup page to get started.</span>
                             }
                         </p>
+                        {botStatus?.whatsapp_configured && !botStatus?.active && (
+                            <div>
+                                <button
+                                    className="btn btn-primary"
+                                    onClick={handleLaunchBot}
+                                    disabled={launching}
+                                >
+                                    {launching
+                                        ? <><span className="spinner" style={{ width: 14, height: 14 }} /> Generating AI prompt...</>
+                                        : '🚀 Launch Bot'}
+                                </button>
+                                {launchError && (
+                                    <p style={{ color: 'var(--color-error, #ef4444)', fontSize: 'var(--text-sm)', marginTop: '8px' }}>
+                                        {launchError}
+                                    </p>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -196,10 +229,10 @@ export default function Dashboard({ business }) {
                                     <tbody>
                                         {orders.map(order => (
                                             <tr key={order.id}>
-                                                <td>#{order.id}</td>
+                                                <td style={{ fontSize: '11px', color: 'var(--text-muted)' }}>#{order.id.slice(0, 8)}</td>
                                                 <td>
-                                                    <div style={{ fontWeight: 500 }}>{order.customer}</div>
-                                                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{order.phone}</div>
+                                                    <div style={{ fontWeight: 500 }}>{order.customer_name || '—'}</div>
+                                                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{order.customer_phone}</div>
                                                 </td>
                                                 <td>
                                                     {Array.isArray(order.items)
@@ -208,11 +241,20 @@ export default function Dashboard({ business }) {
                                                 </td>
                                                 <td>₹{order.total}</td>
                                                 <td>
-                                                    <span className={`badge badge-${order.status.toLowerCase()}`}>
-                                                        {order.status}
-                                                    </span>
+                                                    <select
+                                                        className="input"
+                                                        style={{ padding: '2px 6px', fontSize: '12px' }}
+                                                        value={order.status}
+                                                        onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                                                    >
+                                                        {['pending','confirmed','preparing','delivered','cancelled'].map(s => (
+                                                            <option key={s} value={s}>{s}</option>
+                                                        ))}
+                                                    </select>
                                                 </td>
-                                                <td style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{order.date}</td>
+                                                <td style={{ color: 'var(--text-muted)', fontSize: '13px' }}>
+                                                    {new Date(order.created_at).toLocaleDateString('en-IN')}
+                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>
